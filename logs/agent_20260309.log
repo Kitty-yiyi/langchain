@@ -452,3 +452,79 @@ ImportError: `pypdf` package not found, please install it with `pip install pypd
 2026-03-09 23:08:05,236 - agent - INFO - vector_store.py:124 - [加载知识库]E:\ziyi\project\langchain\data\新生攻略.pdf 内容加载成功
 2026-03-09 23:08:07,584 - agent - INFO - vector_store.py:124 - [加载知识库]E:\ziyi\project\langchain\data\通识课推荐.pdf 内容加载成功
 2026-03-09 23:08:07,584 - agent - INFO - rebuild_vector_store.py:15 - ✅ 向量数据库重建完成！
+2026-03-09 23:08:43,735 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有1条消息。
+2026-03-09 23:08:43,735 - agent - DEBUG - middleware.py:48 - [log_before_model]HumanMessage | 我大二了，需要上哪些课
+2026-03-09 23:08:52,032 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：rag_summarize
+2026-03-09 23:08:52,032 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '信息学院人才培养方案 大二课程'}
+2026-03-09 23:08:56,295 - agent - INFO - middleware.py:27 - [tool monitor]工具rag_summarize调用成功
+2026-03-09 23:08:57,815 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有3条消息。
+2026-03-09 23:08:57,815 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 根据信息学院人才培养方案（2023），大二学年（第三、四学期）开设的课程包括：第三学期开设《Java程序设计》（2学分，44学时，含24讲课+20实验）；第四学期开设《非结构化数据库》（2学分，40学时，含24讲课+16实验）。以上课程属于数据科学与大数据技术专业的学科专业类课程。
+2026-03-09 23:09:24,968 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有1条消息。
+2026-03-09 23:09:24,969 - agent - DEBUG - middleware.py:48 - [log_before_model]HumanMessage | 我是计算机科学与技术专业的。
+2026-03-09 23:10:04,892 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有1条消息。
+2026-03-09 23:10:04,892 - agent - DEBUG - middleware.py:48 - [log_before_model]HumanMessage | 我是计算机科学与技术专业的。大二下需要上什么课呢？全部列出来
+2026-03-09 23:10:13,146 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：rag_summarize
+2026-03-09 23:10:13,147 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '计算机科学与技术专业大二下学期课程'}
+2026-03-09 23:10:23,951 - agent - INFO - middleware.py:27 - [tool monitor]工具rag_summarize调用成功
+2026-03-09 23:10:24,016 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有3条消息。
+2026-03-09 23:10:24,016 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 我不知道。
+2026-03-09 23:10:30,560 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：rag_summarize
+2026-03-09 23:10:30,560 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '信息学院人才培养方案 2023 计算机科学与技术'}
+2026-03-09 23:10:32,219 - agent - INFO - middleware.py:27 - [tool monitor]工具rag_summarize调用成功
+2026-03-09 23:10:32,284 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有5条消息。
+2026-03-09 23:10:32,284 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 我不知道。
+2026-03-09 23:10:35,747 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：get_academic_info
+2026-03-09 23:10:35,747 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '计算机科学与技术专业培养方案'}
+2026-03-09 23:10:35,747 - agent - INFO - middleware.py:27 - [tool monitor]工具get_academic_info调用成功
+2026-03-09 23:10:36,112 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有7条消息。
+2026-03-09 23:10:36,113 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 关于学位和学术要求的详细信息，请咨询教务处学位办公室或学院办公室。
+2026-03-09 23:10:44,259 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：search_course
+2026-03-09 23:10:44,259 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '计算机科学与技术专业 大二下'}
+2026-03-09 23:10:44,260 - agent - INFO - middleware.py:27 - [tool monitor]工具search_course调用成功
+2026-03-09 23:10:44,730 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有9条消息。
+2026-03-09 23:10:44,731 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 未找到包含'计算机科学与技术专业 大二下'的课程信息。建议查询具体课程名称或教师名称。
+2026-03-09 23:10:52,540 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：contact_support
+2026-03-09 23:10:52,540 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'department': '信息学院'}
+2026-03-09 23:10:52,541 - agent - INFO - middleware.py:27 - [tool monitor]工具contact_support调用成功
+2026-03-09 23:10:53,601 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有11条消息。
+2026-03-09 23:10:53,601 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 【信息学院办公室】
+地点：理科楼501
+电话：0000-6666001
+邮箱：cis@xxxx.edu.cn
+工作时间：周一至周五 08:30-17:00
+主要职能：专业咨询、学位审核、学术指导等
+2026-03-09 23:11:39,988 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有1条消息。
+2026-03-09 23:11:39,988 - agent - DEBUG - middleware.py:48 - [log_before_model]HumanMessage | 有什么文学类的社团推荐
+2026-03-09 23:11:47,367 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：search_club
+2026-03-09 23:11:47,367 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'club_name': '文学'}
+2026-03-09 23:11:47,368 - agent - INFO - middleware.py:27 - [tool monitor]工具search_club调用成功
+2026-03-09 23:11:48,629 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有3条消息。
+2026-03-09 23:11:48,629 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 【社团名】文学社
+【指导教师】李教授
+【招新时间】每年9月10日-25日
+【活动时间】周三 19:00-21:00
+【活动地点】文学楼205
+【联系方式】微信：literature_club
+【简介】开展诗歌、散文、小说等创意写作活动
+2026-03-09 23:13:32,907 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有1条消息。
+2026-03-09 23:13:32,907 - agent - DEBUG - middleware.py:48 - [log_before_model]HumanMessage | 计算机科学与技术专业的软件工程在哪学期开课
+2026-03-09 23:13:37,756 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：get_academic_info
+2026-03-09 23:13:37,757 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '计算机科学与技术专业 软件工程 开课学期'}
+2026-03-09 23:13:37,757 - agent - INFO - middleware.py:27 - [tool monitor]工具get_academic_info调用成功
+2026-03-09 23:13:38,119 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有3条消息。
+2026-03-09 23:13:38,119 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 关于学位和学术要求的详细信息，请咨询教务处学位办公室或学院办公室。
+2026-03-09 23:13:46,199 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：search_course
+2026-03-09 23:13:46,199 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '软件工程 计算机科学与技术'}
+2026-03-09 23:13:46,200 - agent - INFO - middleware.py:27 - [tool monitor]工具search_course调用成功
+2026-03-09 23:13:46,660 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有5条消息。
+2026-03-09 23:13:46,660 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 未找到包含'软件工程 计算机科学与技术'的课程信息。建议查询具体课程名称或教师名称。
+2026-03-09 23:13:50,823 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：search_course
+2026-03-09 23:13:50,823 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '软件工程'}
+2026-03-09 23:13:50,824 - agent - INFO - middleware.py:27 - [tool monitor]工具search_course调用成功
+2026-03-09 23:13:51,190 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有7条消息。
+2026-03-09 23:13:51,190 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 未找到包含'软件工程'的课程信息。建议查询具体课程名称或教师名称。
+2026-03-09 23:13:56,306 - agent - INFO - middleware.py:22 - [tool monitor]执行工具：rag_summarize
+2026-03-09 23:13:56,307 - agent - INFO - middleware.py:23 - [tool monitor]传入参数：{'query': '计算机科学与技术专业 人才培养方案 软件工程课程'}
+2026-03-09 23:14:03,356 - agent - INFO - middleware.py:27 - [tool monitor]工具rag_summarize调用成功
+2026-03-09 23:14:04,568 - agent - INFO - middleware.py:46 - [log_before_model]即将调用模型，带有9条消息。
+2026-03-09 23:14:04,569 - agent - DEBUG - middleware.py:48 - [log_before_model]ToolMessage | 计算机科学与技术专业人才培养方案中包含“软件工程A”课程，课程代码为317300007018，学分为2，总学时32，其中讲课学时32，实验学时0，开课学期为第4学期，由信息学院开设。此外，还设有“软件工程课程设计”实践环节。

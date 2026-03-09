@@ -1,0 +1,15 @@
+collection_name: campus_qa
+persist_directory: chroma_db
+k: 3
+data_path: data
+# 记录文档的md5值，避免重复计算向量 表示记录哪些md5被计算过
+md5_hex_store: md5.text
+# 允许的知识文件类型，只有这些类型的文件才会被处理和存储向量
+allow_knowledge_file_type: ["txt", "pdf", "xls", "xlsx"]
+
+# 文本分块的配置，chunk_size表示每个文本块的最大长度，separators是用于分割文本的分隔符列表
+chunk_size: 200
+# chunk_overlap表示相邻文本块之间的重叠部分长度，
+chunk_overlap: 20
+# separators是一个列表，包含了用于分割文本的不同分隔符，这些分隔符可以是换行符、句号、感叹号、问号、空格等，用于将文本切分成更小的块，以便进行向量化处理。
+separators: ["\n\n", "\n", ".", "!", "?", "。", "！", "？", " ", ""]

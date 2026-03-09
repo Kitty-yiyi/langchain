@@ -1,0 +1,7 @@
+2026-03-02 21:55:32,675 - agent - INFO - middleware.py:40 - [log_before_model]即将调用模型，带有1条消息。
+2026-03-02 21:55:32,675 - agent - DEBUG - middleware.py:42 - [log_before_model]HumanMessage | 我要买个机器人
+2026-03-02 21:55:40,206 - agent - INFO - middleware.py:19 - [tool monitor]执行工具：rag_summarize
+2026-03-02 21:55:40,207 - agent - INFO - middleware.py:20 - [tool monitor]传入参数：{'query': '扫地机器人选购指南'}
+2026-03-02 21:55:46,217 - agent - INFO - middleware.py:24 - [tool monitor]工具rag_summarize调用成功
+2026-03-02 21:55:47,432 - agent - INFO - middleware.py:40 - [log_before_model]即将调用模型，带有3条消息。
+2026-03-02 21:55:47,433 - agent - DEBUG - middleware.py:42 - [log_before_model]ToolMessage | 选购扫地机器人时应关注吸力大小、电池续航、导航系统（如激光或视觉导航）、避障能力、尘盒容量、是否支持APP控制及智能规划清扫路径等功能。同时考虑使用环境（如地面类型、房屋面积）和预算，选择具备良好用户评价和售后服务的品牌型号。

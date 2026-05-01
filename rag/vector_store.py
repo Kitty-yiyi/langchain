@@ -78,21 +78,28 @@ class VectorStoreService:
         # 根据文件路径获取文件内容并转换为Document对象列表，支持txt、pdf、xls和xlsx四种文件类型。
         # 如果文件类型不受支持，则返回一个空列表。
         def get_file_documents(read_path: str):
+            # 支持从外部路径加载文档
+            resolved = read_path
             if read_path.endswith("txt"):
-                return txt_loader(read_path)
+                return txt_loader(resolved)
 
             if read_path.endswith("pdf"):
-                return pdf_loader(read_path)
-            
+                return pdf_loader(resolved)
+
             if read_path.endswith((".xls", ".xlsx")):
-                return xls_xlsx_loader(read_path)
+                return xls_xlsx_loader(resolved)
 
             return []
-        # 
+        #
         allowed_files_path: list[str] = listdir_with_allowed_type(
             get_abs_path(chroma_conf["data_path"]),
             tuple(chroma_conf["allow_knowledge_file_type"]),
         )
+
+        # 支持从外部指定额外的文档路径
+        extra_path = os.environ.get("EXTRA_DOC_PATH")
+        if extra_path:
+            allowed_files_path.append(extra_path)
 
         for path in allowed_files_path:
             # 获取文件的MD5

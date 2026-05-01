@@ -201,6 +201,8 @@ def apply_patch(patch: str) -> tuple[bool, str]:
     if not patch.strip():
         return False, "Model did not return a patch."
 
+    print(f"Patch content:\n{patch}", file=sys.stderr)
+
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".patch", delete=False) as f:
         f.write(patch)
         patch_path = f.name

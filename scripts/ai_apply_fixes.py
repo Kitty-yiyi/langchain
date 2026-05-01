@@ -41,7 +41,9 @@ def get_issue_context() -> dict:
 
 
 def fetch_and_get_diff(base_ref: str) -> str:
+    errors = []
     for ref in [base_ref, "main", "master"]:
+        print(f"Trying to fetch origin/{ref}...", file=sys.stderr)
         fetch_result = subprocess.run(
             ["git", "fetch", "origin", ref, "--depth=1"],
             cwd=ROOT,
@@ -51,20 +53,27 @@ def fetch_and_get_diff(base_ref: str) -> str:
             capture_output=True,
         )
         if fetch_result.returncode != 0:
+            error = f"git fetch origin {ref} failed: {fetch_result.stderr or fetch_result.stdout}"
+            print(error, file=sys.stderr)
+            errors.append(error)
             continue
 
+        print(f"Fetch succeeded, trying git diff origin/{ref}...HEAD...", file=sys.stderr)
         diff_result = run(["git", "diff", "--unified=80", f"origin/{ref}...HEAD"], check=False)
         if diff_result.returncode != 0:
+            error = f"git diff origin/{ref}...HEAD failed: {diff_result.stderr or diff_result.stdout}"
+            print(error, file=sys.stderr)
+            errors.append(error)
             continue
 
         diff = diff_result.stdout
+        print(f"Diff succeeded, length: {len(diff)}", file=sys.stderr)
         if len(diff) > MAX_DIFF_CHARS:
             return diff[:MAX_DIFF_CHARS] + "\n\n[Diff truncated because it exceeded the review size limit.]"
         return diff
 
     raise RuntimeError(
-        f"Could not get diff. Tried branches: {base_ref}, main, master.\n"
-        f"Ensure the base branch exists on origin and has commits."
+        f"Could not get diff. Errors:\n" + "\n".join(errors)
     )
 
 

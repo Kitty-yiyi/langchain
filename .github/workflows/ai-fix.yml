@@ -46,13 +46,17 @@ jobs:
           echo "This protects repository write tokens from untrusted code."
           exit 1
 
-      - name: Checkout pull request branch
+      - name: Checkout main branch (workflow and scripts)
         uses: actions/checkout@v4
         with:
-          repository: ${{ steps.pr.outputs.head_repo }}
-          ref: ${{ steps.pr.outputs.head_ref }}
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+          persist-credentials: false
+
+      - name: Checkout PR branch (code to fix)
+        run: |
+          git fetch origin ${{ steps.pr.outputs.head_ref }}
+          git checkout ${{ steps.pr.outputs.head_ref }}
+          git merge origin/main --no-edit || true
 
       - name: Set up Python
         uses: actions/setup-python@v5

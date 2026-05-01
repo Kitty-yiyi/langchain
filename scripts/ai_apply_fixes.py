@@ -50,15 +50,21 @@ def fetch_and_get_diff(base_ref: str) -> str:
             errors="replace",
             capture_output=True,
         )
-        if fetch_result.returncode == 0:
-            diff = git_text(["diff", "--unified=80", f"origin/{ref}...HEAD"])
-            if len(diff) > MAX_DIFF_CHARS:
-                return diff[:MAX_DIFF_CHARS] + "\n\n[Diff truncated because it exceeded the review size limit.]"
-            return diff
+        if fetch_result.returncode != 0:
+            continue
+
+        diff_result = run(["git", "diff", "--unified=80", f"origin/{ref}...HEAD"], check=False)
+        if diff_result.returncode != 0:
+            continue
+
+        diff = diff_result.stdout
+        if len(diff) > MAX_DIFF_CHARS:
+            return diff[:MAX_DIFF_CHARS] + "\n\n[Diff truncated because it exceeded the review size limit.]"
+        return diff
 
     raise RuntimeError(
-        f"Could not fetch base branch. Tried: {base_ref}, main, master.\n"
-        f"Ensure the base branch exists on origin."
+        f"Could not get diff. Tried branches: {base_ref}, main, master.\n"
+        f"Ensure the base branch exists on origin and has commits."
     )
 
 

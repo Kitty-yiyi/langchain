@@ -24,6 +24,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify Anthropic API key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY is not available to this workflow."
+            echo "Add it under Settings -> Secrets and variables -> Actions -> Repository secrets."
+            echo "If this pull request comes from a fork, repository secrets are not exposed to it."
+            exit 1
+          fi
+
       - name: Run Claude code review
         id: claude_review
         uses: anthropics/claude-code-action@v1

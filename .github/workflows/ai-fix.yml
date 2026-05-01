@@ -50,6 +50,16 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Verify Anthropic API key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY is not available to this workflow."
+            echo "Add it under Settings -> Secrets and variables -> Actions -> Repository secrets."
+            exit 1
+          fi
+
       - name: Apply AI fixes
         uses: anthropics/claude-code-action@v1
         with:

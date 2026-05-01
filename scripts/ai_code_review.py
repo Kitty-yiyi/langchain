@@ -92,8 +92,10 @@ Set blockers_found to true only when there are P0 or P1 findings that should blo
             {"role": "user", "content": user},
         ],
         "response_format": {"type": "json_object"},
-        "temperature": 0.1,
     }
+
+    if not model.startswith("o"):
+        payload["temperature"] = 0.1
 
     req = urllib.request.Request(
         f"{base_url}/chat/completions",

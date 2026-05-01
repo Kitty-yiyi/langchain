@@ -55,6 +55,7 @@ def get_diff(base_ref: str) -> str:
 
 def call_openai(skill: str, diff: str, context: dict) -> dict:
     model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
+    base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     system = (
         "You are a senior code reviewer. Review only the supplied pull request diff. "
         "Use the provided skill/checklists as the review policy. Return only valid JSON."
@@ -95,7 +96,7 @@ Set blockers_found to true only when there are P0 or P1 findings that should blo
     }
 
     req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
+        f"{base_url}/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}",

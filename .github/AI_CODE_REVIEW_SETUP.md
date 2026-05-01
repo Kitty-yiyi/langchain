@@ -11,6 +11,8 @@ This repository has two AI-assisted workflows:
    - Go to `Settings -> Secrets and variables -> Actions`.
    - Add `OPENAI_API_KEY`.
    - Optional: add repository variable `OPENAI_MODEL` to override the default `gpt-4.1-mini`.
+   - Optional: add repository variable `OPENAI_BASE_URL` for OpenAI-compatible providers.
+     - Example for getgoapi: `https://api.getgoapi.com/v1`.
 
 2. Allow workflow write permissions:
    - Go to `Settings -> Actions -> General`.

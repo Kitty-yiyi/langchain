@@ -17,6 +17,7 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4.1-mini' }}
+      OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
 
     steps:
       - name: Load pull request context
@@ -72,7 +73,8 @@ jobs:
             exit 1
           fi
 
-          echo "Using OpenAI model: $OPENAI_MODEL"
+          echo "Using OpenAI-compatible endpoint: $OPENAI_BASE_URL"
+          echo "Using OpenAI-compatible model: $OPENAI_MODEL"
 
       - name: Apply OpenAI fixes
         env:

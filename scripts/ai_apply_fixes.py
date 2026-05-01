@@ -32,7 +32,14 @@ def load_review_skill() -> str:
         ".agents/skills/code-review-expert/references/code-quality-checklist.md",
         ".agents/skills/code-review-expert/references/removal-plan.md",
     ]
-    return "\n".join(f"\n\n--- {file} ---\n{read_text(file)}" for file in files)
+    sections = []
+    for file in files:
+        try:
+            content = read_text(file)
+            sections.append(f"\n\n--- {file} ---\n{content}")
+        except FileNotFoundError:
+            print(f"Warning: {file} not found, skipping", file=sys.stderr)
+    return "\n".join(sections)
 
 
 def get_issue_context() -> dict:
@@ -85,7 +92,7 @@ def call_openai(skill: str, diff: str, base_ref: str) -> dict:
     model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
     base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     user = f"""
-You are applying safe code review fixes for a pull request.
+You are an automated code fixer. Your job is to generate a valid unified diff patch that can be applied with `git apply`.
 
 Review policy:
 {skill}
@@ -97,24 +104,40 @@ Pull request diff:
 {diff}
 ```
 
-Return only JSON with this exact shape:
+TASK: Generate a unified diff patch to fix P0/P1 security issues or critical bugs.
+
+Return JSON with this exact shape:
 {{
-  "summary": "brief summary of proposed changes",
-  "patch": "a unified diff patch that can be applied with git apply, or an empty string if no safe automatic fix is possible"
+  "summary": "brief description of what was fixed",
+  "patch": "the unified diff patch, or empty string if no safe fix is possible"
 }}
 
-Patch rules:
-- Fix only clear P0/P1 issues, plus obvious local low-risk P2 issues.
-- Do not rewrite unrelated code.
-- Do not edit generated caches, logs, local databases, or vector store files.
-- The patch must be a valid unified diff rooted at the repository root.
-- If you cannot produce a safe patch, return an empty patch and explain why in summary.
+UNIFIED DIFF FORMAT EXAMPLE:
+```diff
+--- a/app.py
++++ b/app.py
+@@ -1,4 +1,5 @@
+ import time
+-API_SECRET_KEY = "sk-1234567890abcdef"
++# P0 FIX: Removed hardcoded API key - use environment variable instead
++API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "")
+ 
+ # 导入streamlit库
+```
+
+RULES:
+1. The patch MUST start with --- and +++ lines showing file paths
+2. The patch MUST include @@ line numbers @@
+3. Use - prefix for removed lines, + prefix for added lines
+4. Fix ONLY P0/P1 issues (security vulnerabilities, critical bugs)
+5. If you cannot produce a safe, minimal patch, return empty patch and explain in summary
+6. Do NOT rewrite unrelated code
 """
 
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You are a careful automated code fixer. Return only valid JSON."},
+            {"role": "system", "content": "You are a careful automated code fixer. Return only valid JSON. Generate proper unified diff format."},
             {"role": "user", "content": user},
         ],
         "response_format": {"type": "json_object"},
@@ -222,7 +245,11 @@ def main() -> int:
 
     print("Calling OpenAI API...", file=sys.stderr)
     try:
-        result = call_openai(load_review_skill(), diff, base_ref)
+        print("Loading review skill...", file=sys.stderr)
+        skill = load_review_skill()
+        print(f"Review skill loaded, length: {len(skill)}", file=sys.stderr)
+        result = call_openai(skill, diff, base_ref)
+        print(f"OpenAI API call succeeded, result keys: {list(result.keys())}", file=sys.stderr)
     except Exception as e:
         error_msg = f"OpenAI API error: {type(e).__name__}: {e}"
         print(error_msg, file=sys.stderr)
@@ -230,15 +257,21 @@ def main() -> int:
         return 1
 
     patch = result.get("patch", "")
+    print(f"Patch length: {len(patch)}", file=sys.stderr)
     ok, detail = apply_patch(patch)
+    print(f"Apply patch result: {ok}, detail: {detail[:200] if detail else 'none'}", file=sys.stderr)
 
     summary = result.get("summary", "AI fix completed.")
-    if ok:
-        github_comment(f"## AI Fix\n\n{summary}\n\nPatch applied and will be committed by the workflow.")
-        return 0
-
-    github_comment(f"## AI Fix\n\n{summary}\n\nNo patch was applied.\n\n```text\n{detail[:4000]}\n```")
-    return 1
+    try:
+        if ok:
+            github_comment(f"## AI Fix\n\n{summary}\n\nPatch applied and will be committed by the workflow.")
+            return 0
+        else:
+            github_comment(f"## AI Fix\n\n{summary}\n\nNo patch was applied.\n\n```text\n{detail[:4000]}\n```")
+            return 1
+    except Exception as e:
+        print(f"Failed to post GitHub comment: {type(e).__name__}: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

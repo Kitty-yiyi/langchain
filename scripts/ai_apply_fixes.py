@@ -132,18 +132,23 @@ Patch rules:
         },
         method="POST",
     )
+    print(f"Sending request to {base_url}/chat/completions with model {model}", file=sys.stderr)
     try:
         with urllib.request.urlopen(req, timeout=120) as res:
             raw = res.read().decode("utf-8")
+        print(f"API response received, length: {len(raw)}", file=sys.stderr)
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"OpenAI API error {e.code}: {body}") from e
+    except Exception as e:
+        raise RuntimeError(f"Request failed: {type(e).__name__}: {e}") from e
 
     if not raw.strip():
         raise RuntimeError("OpenAI API returned an empty response body")
 
     response = json.loads(raw)
-    return json.loads(response["choices"][0]["message"]["content"] or "{}")
+    content = response.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+    return json.loads(content or "{}")
 
 
 def github_comment(markdown: str) -> None:

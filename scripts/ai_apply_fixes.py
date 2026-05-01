@@ -88,56 +88,69 @@ def get_diff(base_ref: str) -> str:
     return fetch_and_get_diff(base_ref)
 
 
-def call_openai(skill: str, diff: str, base_ref: str) -> dict:
+def get_changed_files(diff: str) -> list[str]:
+    files = []
+    for line in diff.split("\n"):
+        if line.startswith("diff --git "):
+            parts = line.split(" ")
+            if len(parts) >= 4:
+                file_path = parts[2].replace("a/", "", 1)
+                if file_path not in files:
+                    files.append(file_path)
+    return files
+
+
+def call_openai(skill: str, diff: str, base_ref: str, changed_files: dict[str, str]) -> dict:
     model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
     base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+
+    files_context = ""
+    for file_path, content in changed_files.items():
+        files_context += f"\n\n--- {file_path} ---\n```\n{content}\n```"
+
     user = f"""
-You are an automated code fixer. Your job is to generate a valid unified diff patch that can be applied with `git apply`.
+You are an automated code fixer. Your job is to fix security vulnerabilities (P0) and critical bugs (P1).
 
 Review policy:
 {skill}
 
 Base branch: {base_ref}
 
+Changed files content:
+{files_context}
+
 Pull request diff:
 ```diff
 {diff}
 ```
 
-TASK: Generate a unified diff patch to fix P0/P1 security issues or critical bugs.
+TASK: Fix P0/P1 issues by returning the COMPLETE FIXED FILE CONTENT.
 
 Return JSON with this exact shape:
 {{
   "summary": "brief description of what was fixed",
-  "patch": "the unified diff patch, or empty string if no safe fix is possible"
+  "file_path": "path/to/fixed/file.py",
+  "fixed_content": "the complete fixed file content, or empty string if no fix"
 }}
 
-UNIFIED DIFF FORMAT EXAMPLE:
-```diff
---- a/app.py
-+++ b/app.py
-@@ -1,4 +1,5 @@
- import time
--API_SECRET_KEY = "sk-1234567890abcdef"
-+# P0 FIX: Removed hardcoded API key - use environment variable instead
-+API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "")
- 
- # 导入streamlit库
-```
-
 RULES:
-1. The patch MUST start with --- and +++ lines showing file paths
-2. The patch MUST include @@ line numbers @@
-3. Use - prefix for removed lines, + prefix for added lines
-4. Fix ONLY P0/P1 issues (security vulnerabilities, critical bugs)
-5. If you cannot produce a safe, minimal patch, return empty patch and explain in summary
-6. Do NOT rewrite unrelated code
+1. Return the COMPLETE file content, not a diff
+2. Fix ONLY P0/P1 issues (security vulnerabilities like hardcoded secrets, critical bugs)
+3. Keep all other code unchanged
+4. If no safe fix is possible, return empty fixed_content and explain in summary
+5. Only fix ONE file at a time
+
+EXAMPLE - If you find hardcoded API key like:
+API_SECRET_KEY = "sk-1234567890abcdef"
+
+Fix it to:
+API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "")
 """
 
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You are a careful automated code fixer. Return only valid JSON. Generate proper unified diff format."},
+            {"role": "system", "content": "You are a careful automated code fixer. Return only valid JSON."},
             {"role": "user", "content": user},
         ],
         "response_format": {"type": "json_object"},
@@ -245,12 +258,28 @@ def main() -> int:
         github_comment("## AI Fix\n\nNo pull request diff was found, so no fixes were applied.")
         return 0
 
+    changed_file_paths = get_changed_files(diff)
+    print(f"Changed files: {changed_file_paths}", file=sys.stderr)
+
+    changed_files = {}
+    for file_path in changed_file_paths[:5]:
+        try:
+            content = read_text(file_path)
+            changed_files[file_path] = content
+            print(f"Read file: {file_path}, length: {len(content)}", file=sys.stderr)
+        except Exception as e:
+            print(f"Failed to read {file_path}: {e}", file=sys.stderr)
+
+    if not changed_files:
+        github_comment("## AI Fix\n\nNo readable files found in the diff.")
+        return 0
+
     print("Calling OpenAI API...", file=sys.stderr)
     try:
         print("Loading review skill...", file=sys.stderr)
         skill = load_review_skill()
         print(f"Review skill loaded, length: {len(skill)}", file=sys.stderr)
-        result = call_openai(skill, diff, base_ref)
+        result = call_openai(skill, diff, base_ref, changed_files)
         print(f"OpenAI API call succeeded, result keys: {list(result.keys())}", file=sys.stderr)
     except Exception as e:
         error_msg = f"OpenAI API error: {type(e).__name__}: {e}"
@@ -258,21 +287,29 @@ def main() -> int:
         github_comment(f"## AI Fix\n\n{error_msg}")
         return 1
 
-    patch = result.get("patch", "")
-    print(f"Patch length: {len(patch)}", file=sys.stderr)
-    ok, detail = apply_patch(patch)
-    print(f"Apply patch result: {ok}, detail: {detail[:200] if detail else 'none'}", file=sys.stderr)
-
     summary = result.get("summary", "AI fix completed.")
+    file_path = result.get("file_path", "")
+    fixed_content = result.get("fixed_content", "")
+
+    if not file_path or not fixed_content:
+        github_comment(f"## AI Fix\n\n{summary}\n\nNo file was modified.")
+        return 0
+
+    print(f"Writing fix to {file_path}", file=sys.stderr)
     try:
-        if ok:
-            github_comment(f"## AI Fix\n\n{summary}\n\nPatch applied and will be committed by the workflow.")
-            return 0
-        else:
-            github_comment(f"## AI Fix\n\n{summary}\n\nNo patch was applied.\n\n```text\n{detail[:4000]}\n```")
+        target_path = ROOT / file_path
+        if not target_path.exists():
+            github_comment(f"## AI Fix\n\nError: File {file_path} does not exist.")
             return 1
+
+        target_path.write_text(fixed_content, encoding="utf-8")
+        print(f"Successfully wrote fix to {file_path}", file=sys.stderr)
+        github_comment(f"## AI Fix\n\n{summary}\n\nFixed file: `{file_path}`\n\nChanges will be committed by the workflow.")
+        return 0
     except Exception as e:
-        print(f"Failed to post GitHub comment: {type(e).__name__}: {e}", file=sys.stderr)
+        error_msg = f"Failed to write file: {type(e).__name__}: {e}"
+        print(error_msg, file=sys.stderr)
+        github_comment(f"## AI Fix\n\n{error_msg}")
         return 1
 
 

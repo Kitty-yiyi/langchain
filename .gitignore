@@ -1,5 +1,7 @@
 .venv/
 .idea/
+.claude/
+.trae/
 
 __pycache__/
 *.py[cod]
@@ -22,4 +24,3 @@ md5.text
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-

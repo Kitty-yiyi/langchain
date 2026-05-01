@@ -1,0 +1,66 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude code review
+        id: claude_review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          display_report: true
+          prompt: |
+            You are reviewing this pull request before merge.
+
+            Read and follow the review skill at:
+            - .agents/skills/code-review-expert/SKILL.md
+            - .agents/skills/code-review-expert/references/solid-checklist.md
+            - .agents/skills/code-review-expert/references/security-checklist.md
+            - .agents/skills/code-review-expert/references/code-quality-checklist.md
+            - .agents/skills/code-review-expert/references/removal-plan.md
+
+            Review only the pull request changes against the base branch.
+            Focus on correctness, security, reliability, maintainability, and project fit.
+            Post concise PR review feedback with file/line comments where useful.
+
+            Do not modify files in this workflow.
+
+            Return structured output matching the schema:
+            - blockers_found: true if there are any P0 or P1 findings
+            - max_severity: one of P0, P1, P2, P3, NONE
+            - summary: concise human-readable review summary
+          claude_args: >-
+            --max-turns 8
+            --output-format json
+            --json-schema
+            {"type":"object","properties":{"blockers_found":{"type":"boolean"},"max_severity":{"type":"string","enum":["P0","P1","P2","P3","NONE"]},"summary":{"type":"string"}},"required":["blockers_found","max_severity","summary"],"additionalProperties":false}
+
+      - name: Block merge on critical findings
+        if: fromJSON(steps.claude_review.outputs.structured_output).blockers_found == true
+        run: |
+          echo "AI review found blocking issues."
+          echo "Max severity: ${{ fromJSON(steps.claude_review.outputs.structured_output).max_severity }}"
+          echo "${{ fromJSON(steps.claude_review.outputs.structured_output).summary }}"
+          exit 1

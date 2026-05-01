@@ -1,0 +1,91 @@
+name: AI Fix
+
+on:
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  fix:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/ai-fix')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Load pull request context
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pull_number = context.issue.number;
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number,
+            });
+
+            core.setOutput("head_ref", pr.head.ref);
+            core.setOutput("head_sha", pr.head.sha);
+            core.setOutput("head_repo", pr.head.repo.full_name);
+            core.setOutput("base_ref", pr.base.ref);
+            core.setOutput("same_repo", String(pr.head.repo.full_name === `${owner}/${repo}`));
+
+      - name: Stop on forked pull requests
+        if: steps.pr.outputs.same_repo != 'true'
+        run: |
+          echo "Automatic AI fixes are disabled for forked pull requests."
+          echo "This protects repository write tokens from untrusted code."
+          exit 1
+
+      - name: Checkout pull request branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.head_repo }}
+          ref: ${{ steps.pr.outputs.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply AI fixes
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          display_report: true
+          prompt: |
+            The user requested /ai-fix on this pull request.
+
+            Read and follow the review skill at:
+            - .agents/skills/code-review-expert/SKILL.md
+            - .agents/skills/code-review-expert/references/solid-checklist.md
+            - .agents/skills/code-review-expert/references/security-checklist.md
+            - .agents/skills/code-review-expert/references/code-quality-checklist.md
+            - .agents/skills/code-review-expert/references/removal-plan.md
+
+            Review the pull request changes against the base branch.
+            Implement safe, focused fixes for P0 and P1 findings.
+            You may also fix obvious low-risk P2 issues when the fix is local and clear.
+
+            Do not perform broad refactors.
+            Do not rewrite unrelated code.
+            Do not modify generated caches, local databases, logs, or vector store files.
+            Preserve the current project style.
+            After editing, summarize what changed and what still needs human review.
+          claude_args: "--max-turns 12"
+
+      - name: Commit AI fixes
+        run: |
+          if git diff --quiet; then
+            echo "No AI-generated changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Apply AI code review fixes"
+          git push origin HEAD:${{ steps.pr.outputs.head_ref }}

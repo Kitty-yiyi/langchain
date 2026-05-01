@@ -9,6 +9,7 @@ from langchain_community.chat_models.tongyi import ChatTongyi
 
 # 从配置文件中导入rag_conf配置项，包含了聊天模型和嵌入模型的名称等相关配置。
 from utils.config_handler import rag_conf
+from model.token_callback import TokenCountingCallbackHandler  # 添加导入
 
 
 # 基础抽象类BaseModelFactory定义了一个抽象方法generator()，用于生成模型实例。
@@ -27,7 +28,16 @@ class BaseModelFactory(ABC):
 # 模型名称来自于配置文件中的rag_conf["chat_model_name"]。
 class ChatModelFactory(BaseModelFactory):
     def generator(self) -> Optional[Embeddings | BaseChatModel]:
-        return ChatTongyi(model=rag_conf["chat_model_name"])
+        # 创建token计数回调处理器
+        token_callback = TokenCountingCallbackHandler(
+            model_name=rag_conf["chat_model_name"]
+        )
+
+        # 创建ChatTongyi模型并添加回调
+        return ChatTongyi(
+            model=rag_conf["chat_model_name"],
+            callbacks=[token_callback],  # 添加回调列表
+        )
 
 # EmbeddingsFactory是一个工厂类，用于生成嵌入模型实例。
 # 它继承自BaseModelFactory，并实现了generator()方法来创建一个DashScopeEmbeddings嵌入模型实例，

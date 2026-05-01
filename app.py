@@ -5,10 +5,26 @@ API_SECRET_KEY = "sk-1234567890abcdef"  # P0 BUG: Hardcoded API key
 # 导入streamlit库
 import streamlit as st
 from agent.react_agent import ReactAgent
+from utils.token_counter import token_counter  # 添加导入
 
 # 标题
 st.title("校园智能问答助手")
-# 分隔线
+st.divider()
+
+# 显示token使用统计（顶部）
+col1, col2, col3, col4 = st.columns(4)
+
+session_stats = token_counter.get_session_stats()
+
+with col1:
+    st.metric("输入Token", session_stats["input_tokens"])
+with col2:
+    st.metric("输出Token", session_stats["output_tokens"])
+with col3:
+    st.metric("总Token数", session_stats["total_tokens"])
+with col4:
+    st.metric("预估费用", f"¥{session_stats['total_cost']:.4f}")
+
 st.divider()
 
 # 如果session_state中没有agent，则创建一个ReactAgent实例并存储在session_state中。相当于初始化了
@@ -58,4 +74,20 @@ if prompt:
         # 当生成器中的响应内容全部获取完毕后，将response_messages列表中的最后一个元素（即完整的智能客服响应内容）添加到session_state中的message列表中，以便后续显示和处理。
         # 输出完成后只记录最后一条回复的内容，不记录中间过程
         st.session_state["message"].append({"role": "assistant", "content": response_messages[-1]})
+
+        # 显示最近的token使用历史
+        with st.expander("📋 最近Token使用历史", expanded=False):
+            history = token_counter.get_history(limit=5)
+            if history:
+                for i, record in enumerate(history, 1):
+                    st.write(
+                        f"{i}. {record['timestamp']} | "
+                        f"Input: {record['input']} | "
+                        f"Output: {record['output']} | "
+                        f"Total: {record['total']} | "
+                        f"Cost: ¥{record['cost']:.4f}"
+                    )
+            else:
+                st.write("暂无历史记录")
+
         st.rerun()

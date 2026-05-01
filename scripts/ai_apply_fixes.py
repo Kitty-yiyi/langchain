@@ -40,12 +40,30 @@ def get_issue_context() -> dict:
     return {"number": event["issue"]["number"]}
 
 
+def fetch_and_get_diff(base_ref: str) -> str:
+    for ref in [base_ref, "main", "master"]:
+        fetch_result = subprocess.run(
+            ["git", "fetch", "origin", ref, "--depth=1"],
+            cwd=ROOT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+        )
+        if fetch_result.returncode == 0:
+            diff = git_text(["diff", "--unified=80", f"origin/{ref}...HEAD"])
+            if len(diff) > MAX_DIFF_CHARS:
+                return diff[:MAX_DIFF_CHARS] + "\n\n[Diff truncated because it exceeded the review size limit.]"
+            return diff
+
+    raise RuntimeError(
+        f"Could not fetch base branch. Tried: {base_ref}, main, master.\n"
+        f"Ensure the base branch exists on origin."
+    )
+
+
 def get_diff(base_ref: str) -> str:
-    subprocess.run(["git", "fetch", "origin", base_ref, "--depth=1"], cwd=ROOT, check=False)
-    diff = git_text(["diff", "--unified=80", f"origin/{base_ref}...HEAD"])
-    if len(diff) > MAX_DIFF_CHARS:
-        return diff[:MAX_DIFF_CHARS] + "\n\n[Diff truncated because it exceeded the review size limit.]"
-    return diff
+    return fetch_and_get_diff(base_ref)
 
 
 def call_openai(skill: str, diff: str, base_ref: str) -> dict:
@@ -158,7 +176,12 @@ def main() -> int:
         return 1
 
     base_ref = os.environ.get("PR_BASE_REF", "main")
-    diff = get_diff(base_ref)
+    try:
+        diff = get_diff(base_ref)
+    except RuntimeError as e:
+        github_comment(f"## AI Fix\n\nFailed to get diff: {e}")
+        return 1
+
     if not diff.strip():
         github_comment("## AI Fix\n\nNo pull request diff was found, so no fixes were applied.")
         return 0

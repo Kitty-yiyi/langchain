@@ -9,7 +9,9 @@ This repository has two AI-assisted workflows:
 
 1. Add repository secret:
    - Go to `Settings -> Secrets and variables -> Actions`.
-   - Add `ANTHROPIC_API_KEY`.
+   - Add one of these:
+     - `ANTHROPIC_API_KEY` for a direct Anthropic API key.
+     - `CLAUDE_CODE_OAUTH_TOKEN` for a Claude Code OAuth token.
 
 2. Allow workflow write permissions:
    - Go to `Settings -> Actions -> General`.

@@ -104,9 +104,17 @@ Set blockers_found to true only when there are P0 or P1 findings that should blo
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=120) as res:
-        response = json.loads(res.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=120) as res:
+            raw = res.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"OpenAI API error {e.code}: {body}") from e
 
+    if not raw.strip():
+        raise RuntimeError("OpenAI API returned an empty response body")
+
+    response = json.loads(raw)
     content = response["choices"][0]["message"]["content"] or "{}"
     return json.loads(content)
 

@@ -182,17 +182,37 @@ def main() -> int:
         return 1
 
     base_ref = os.environ.get("PR_BASE_REF", "main")
+    print(f"Getting diff for base branch: {base_ref}", file=sys.stderr)
+
     try:
         diff = get_diff(base_ref)
+        print(f"Diff retrieved successfully, length: {len(diff)}", file=sys.stderr)
     except RuntimeError as e:
-        github_comment(f"## AI Fix\n\nFailed to get diff: {e}")
+        error_msg = f"Failed to get diff: {e}"
+        print(error_msg, file=sys.stderr)
+        try:
+            github_comment(f"## AI Fix\n\n{error_msg}")
+        except Exception as comment_error:
+            print(f"Failed to post comment: {comment_error}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        error_msg = f"Unexpected error getting diff: {type(e).__name__}: {e}"
+        print(error_msg, file=sys.stderr)
         return 1
 
     if not diff.strip():
         github_comment("## AI Fix\n\nNo pull request diff was found, so no fixes were applied.")
         return 0
 
-    result = call_openai(load_review_skill(), diff, base_ref)
+    print("Calling OpenAI API...", file=sys.stderr)
+    try:
+        result = call_openai(load_review_skill(), diff, base_ref)
+    except Exception as e:
+        error_msg = f"OpenAI API error: {type(e).__name__}: {e}"
+        print(error_msg, file=sys.stderr)
+        github_comment(f"## AI Fix\n\n{error_msg}")
+        return 1
+
     patch = result.get("patch", "")
     ok, detail = apply_patch(patch)
 

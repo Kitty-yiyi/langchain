@@ -17,6 +17,8 @@ jobs:
   review:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -25,8 +27,6 @@ jobs:
           fetch-depth: 0
 
       - name: Verify Anthropic API key
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
             echo "ANTHROPIC_API_KEY is not available to this workflow."
@@ -35,9 +35,21 @@ jobs:
             exit 1
           fi
 
+          case "$ANTHROPIC_API_KEY" in
+            sk-ant-*) ;;
+            *)
+              echo "ANTHROPIC_API_KEY is present, but it does not look like an Anthropic API key."
+              echo "Use an API key from https://console.anthropic.com/, usually starting with sk-ant-."
+              echo "Do not use a Claude app login token, OAuth token, quoted value, or placeholder."
+              exit 1
+              ;;
+          esac
+
       - name: Run Claude code review
         id: claude_review
         uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

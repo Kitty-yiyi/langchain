@@ -31,21 +31,4 @@ jobs:
 
       - name: Compile source files
         run: |
-          python -m py_compile \
-            app.py \
-            rebuild_vector_store.py \
-            test_rag.py \
-            test_token_counter.py \
-            agent/react_agent.py \
-            agent/tools/agent_tools.py \
-            agent/tools/middleware.py \
-            model/factory.py \
-            model/token_callback.py \
-            rag/rag_service.py \
-            rag/vector_store.py \
-            utils/config_handler.py \
-            utils/file_handler.py \
-            utils/logger_handler.py \
-            utils/path_tool.py \
-            utils/prompt_loader.py \
-            utils/token_counter.py
+          python -m py_compile $(git ls-files '*.py')

@@ -14,6 +14,10 @@ jobs:
   fix:
     if: github.event.issue.pull_request && contains(github.event.comment.body, '/ai-fix')
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4.1-mini' }}
+      OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
 
     steps:
       - name: Load pull request context
@@ -50,32 +54,33 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Apply AI fixes
-        uses: anthropics/claude-code-action@v1
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          display_report: true
-          prompt: |
-            The user requested /ai-fix on this pull request.
+          python-version: "3.11"
+          cache: pip
 
-            Read and follow the review skill at:
-            - .agents/skills/code-review-expert/SKILL.md
-            - .agents/skills/code-review-expert/references/solid-checklist.md
-            - .agents/skills/code-review-expert/references/security-checklist.md
-            - .agents/skills/code-review-expert/references/code-quality-checklist.md
-            - .agents/skills/code-review-expert/references/removal-plan.md
+      - name: Install fix dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-            Review the pull request changes against the base branch.
-            Implement safe, focused fixes for P0 and P1 findings.
-            You may also fix obvious low-risk P2 issues when the fix is local and clear.
+      - name: Verify OpenAI authentication
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY is not available to this workflow."
+            echo "Add OPENAI_API_KEY under Settings -> Secrets and variables -> Actions -> Repository secrets."
+            exit 1
+          fi
 
-            Do not perform broad refactors.
-            Do not rewrite unrelated code.
-            Do not modify generated caches, local databases, logs, or vector store files.
-            Preserve the current project style.
-            After editing, summarize what changed and what still needs human review.
-          claude_args: "--max-turns 12"
+          echo "Using OpenAI-compatible endpoint: $OPENAI_BASE_URL"
+          echo "Using OpenAI-compatible model: $OPENAI_MODEL"
+
+      - name: Apply OpenAI fixes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BASE_REF: ${{ steps.pr.outputs.base_ref }}
+        run: python scripts/ai_apply_fixes.py
 
       - name: Commit AI fixes
         run: |

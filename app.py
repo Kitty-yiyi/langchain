@@ -1,6 +1,6 @@
 import time
 
-API_SECRET_KEY = "sk-1234567890abcdef"  # P0 BUG: Hardcoded API key
+API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "")  # Fixed P0: Removed hardcoded API key
 
 # 导入streamlit库
 import streamlit as st

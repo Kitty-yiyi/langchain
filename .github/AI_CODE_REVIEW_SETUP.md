@@ -9,7 +9,8 @@ This repository has two AI-assisted workflows:
 
 1. Add repository secret:
    - Go to `Settings -> Secrets and variables -> Actions`.
-   - Add `CLAUDE_CODE_OAUTH_TOKEN` for a Claude Code OAuth token.
+   - Add `OPENAI_API_KEY`.
+   - Optional: add repository variable `OPENAI_MODEL` to override the default `gpt-4.1-mini`.
 
 2. Allow workflow write permissions:
    - Go to `Settings -> Actions -> General`.

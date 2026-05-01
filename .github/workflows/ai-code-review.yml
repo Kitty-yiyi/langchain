@@ -18,7 +18,6 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
     steps:
@@ -29,41 +28,21 @@ jobs:
 
       - name: Verify Claude authentication
         run: |
-          if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
             echo "Claude authentication is not available to this workflow."
-            echo "Add one of these under Settings -> Secrets and variables -> Actions -> Repository secrets:"
-            echo "- ANTHROPIC_API_KEY for a direct Anthropic API key"
-            echo "- CLAUDE_CODE_OAUTH_TOKEN for a Claude Code OAuth token"
+            echo "Add CLAUDE_CODE_OAUTH_TOKEN under Settings -> Secrets and variables -> Actions -> Repository secrets."
             echo "If this pull request comes from a fork, repository secrets are not exposed to it."
             exit 1
           fi
 
-          if [ -n "$ANTHROPIC_API_KEY" ]; then
-            case "$ANTHROPIC_API_KEY" in
-              sk-ant-*) ;;
-              *)
-                echo "ANTHROPIC_API_KEY is present, but it does not look like a direct Anthropic API key."
-                echo "If this is a Claude Code OAuth token, store it as CLAUDE_CODE_OAUTH_TOKEN instead."
-                echo "Otherwise use a direct API key from https://console.anthropic.com/."
-                exit 1
-                ;;
-            esac
-          fi
-
-          if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
-            echo "Using Claude Code OAuth token."
-          else
-            echo "Using direct Anthropic API key."
-          fi
+          echo "Using Claude Code OAuth token."
 
       - name: Run Claude code review
         id: claude_review
         uses: anthropics/claude-code-action@v1
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           display_report: true
